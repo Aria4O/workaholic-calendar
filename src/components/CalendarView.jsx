@@ -15,7 +15,7 @@ function stripHoursSuffix(title) {
   return title.replace(/\s*\(\d+(\.\d+)?h\)\s*$/, "");
 }
 
-export default function CalendarView({ calendars, events, onEventsChange }) {
+export default function CalendarView({ calendars, events, activeCalendarId, onEventsChange }) {
   const calendarMap = useMemo(() => {
     const map = new Map();
     for (const c of calendars) map.set(c.id, c);
@@ -36,30 +36,38 @@ export default function CalendarView({ calendars, events, onEventsChange }) {
         center: "title",
         right: "dayGridMonth,timeGridWeek,timeGridDay",
       },
+      eventClick: (clickInfo) => {
+      const title = clickInfo.event.title || "this event";
+      const ok = confirm(`Delete ${title}?`);
+      if (!ok) return;
+
+      const id = clickInfo.event.id;
+      onEventsChange((prev) => prev.filter((e) => e.id !== id));
+},
 
       select: (info) => {
-        const title = prompt("Title (e.g., Shift - Job / Task):");
-        if (!title) return;
+        const cal =
+              calendars.find((c) => c.id === activeCalendarId) ||
+              calendars.find((c) => c.name === "Personal") ||
+              calendars[0];
 
-        const names = calendars.map((c) => c.name).join(", ");
-        const chosenName = prompt(`Which calendar? (${names})`, "Personal");
-        const chosen = calendars.find((c) => c.name.toLowerCase() === (chosenName || "").toLowerCase());
-        const cal = chosen || calendars.find((c) => c.name === "Personal") || calendars[0];
-
-        const hours = calcHours(info.start, info.end);
+         const hours = calcHours(info.start, info.end);
 
         const newEvent = {
-          id: crypto.randomUUID(),
-          title: `${title} (${hours}h)`,
-          start: info.start,
-          end: info.end,
-          backgroundColor: cal?.color,
-          borderColor: cal?.color,
-          extendedProps: { hours, calendarId: cal.id },
+              id: crypto.randomUUID(),
+             title: `(${hours}h)`,
+             start: info.start,
+             end: info.end,
+             backgroundColor: cal.color,
+             borderColor: cal.color,
+              extendedProps: {
+                hours,
+                calendarId: cal.id,
+            },
         };
 
-        onEventsChange((prev) => [...prev, newEvent]);
-      },
+         onEventsChange((prev) => [...prev, newEvent]);
+    },
 
       eventChange: (change) => {
         const start = change.event.start;

@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import CalendarView from "./components/CalendarView.jsx";
 import { useLocalStorage } from "./hooks/useLocalStorage.js";
+import { startOfPayWeek, fmtRange, ymd } from "./utils/payWeek.js";
 
 const DEFAULT_CALENDARS = [
-  { id: "personal", name: "Personal", color: "#a78bfa", enabled: true, type: "general" },
+  { id: "personal", name: "Personal", color: "#a78bfa", enabled: true, type: "general" , pay: {weekStart: 4, weeklyLimit: null}},
 ];
 
 function makeId() {
@@ -15,7 +16,28 @@ const PASTELS = ["#a78bfa", "#34d399", "#60a5fa", "#f472b6", "#fb923c", "#facc15
 export default function App() {
   const [calendars, setCalendars] = useLocalStorage("workaholic_calendars", DEFAULT_CALENDARS);
   const [events, setEvents] = useLocalStorage("workaholic_events", []);
+  const [weeklyLimitTotal, setWeeklyLimitTotal] = useLocalStorage(
+  "workaholic_weekly_limit_total",
+  20
+);
+
+  const [activeCalendarId, setActiveCalendarId] = useState(
+    calendars.find((c) => c.enabled)?.id || calendars[0].id
+  );
   const [newName, setNewName] = useState("");
+
+  const getHoursFromEvent = (e) => {
+  const start = e?.start ? new Date(e.start) : null;
+  const end = e?.end ? new Date(e.end) : null;
+  if (!start || !end) return 0;
+  return Math.round(((end - start) / 3600000) * 100) / 100; // ms -> hours, 2 decimals
+};
+
+ const jobCalIds = useMemo(
+  () => new Set(calendars.filter((c) => c.type === "job").map((c) => c.id)),
+  [calendars]
+);
+ 
 
   const enabledCalendarIds = useMemo(
     () => new Set(calendars.filter((c) => c.enabled).map((c) => c.id)),
@@ -26,12 +48,43 @@ export default function App() {
     () => events.filter((e) => enabledCalendarIds.has(e.extendedProps?.calendarId)),
     [events, enabledCalendarIds]
   );
+const [selectedWeekKey, setSelectedWeekKey] = useLocalStorage(
+  "workaholic_selected_week_key",
+  ymd(startOfPayWeek(new Date(), 4))
+);
+
+const selectedWeekStart = useMemo(
+  () => new Date(selectedWeekKey + "T00:00:00"),
+  [selectedWeekKey]
+);
+
+const hoursByCalendarThisWeek = useMemo(() => {
+  const map = {}; // calId -> hours
+  for (const e of events) {
+    const calId = e.extendedProps?.calendarId;
+    if (!calId) continue;
+
+    const start = e.start ? new Date(e.start) : null;
+    if (!start) continue;
+
+    const weekKey = ymd(startOfPayWeek(start, 4));
+    if (weekKey !== selectedWeekKey) continue;
+
+    map[calId] = (map[calId] || 0) + getHoursFromEvent(e);
+  }
+  return map;
+}, [events, selectedWeekKey]);
 
   const toggleCalendar = (id) => {
-    setCalendars((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
-    );
-  };
+  setCalendars((prev) =>
+    prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
+  );
+
+  if (activeCalendarId === id) {
+    const next = calendars.find((c) => c.id !== id && c.enabled);
+    if (next) setActiveCalendarId(next.id);
+  }
+};
 
   const addCalendar = () => {
     const name = newName.trim();
@@ -41,7 +94,7 @@ export default function App() {
 
     setCalendars((prev) => [
       ...prev,
-      { id: makeId(), name, color, enabled: true, type: "job" },
+      { id: makeId(), name, color, enabled: true, type: "job", pay: {weekStart:4, weeklyLimit:20} },
     ]);
     setNewName("");
   };
@@ -54,6 +107,68 @@ export default function App() {
     // Also remove events that belonged to that calendar
     setEvents((prev) => prev.filter((e) => e.extendedProps?.calendarId !== id));
   };
+  const weeklyTotals = useMemo(() => {
+  const jobCalIds = new Set(calendars.filter((c) => c.type === "job").map((c) => c.id));
+
+  // totals[weekKey] = hours
+  const totals = new Map();
+
+  for (const e of events) {
+    const calId = e.extendedProps?.calendarId;
+    if (!calId || !jobCalIds.has(calId)) continue;
+
+    const start = e.start ? new Date(e.start) : null;
+    if (!start) continue;
+
+    const hours = getHoursFromEvent(e);
+    const weekStart = startOfPayWeek(start, 4); // Thu start
+    const weekKey = ymd(weekStart);
+
+    totals.set(weekKey, (totals.get(weekKey) || 0) + hours);
+  }
+
+  return totals;
+}, [events, calendars]);
+
+const weeklyWarnings = useMemo(() => {
+  if (weeklyLimitTotal == null) return [];
+
+  const warnings = [];
+  for (const [weekKey, hours] of weeklyTotals.entries()) {
+    if (hours > weeklyLimitTotal) {
+      const weekStart = new Date(weekKey + "T00:00:00");
+      warnings.push({
+        weekKey,
+        rangeLabel: fmtRange(weekStart),
+        hours,
+        limit: weeklyLimitTotal,
+      });
+    }
+  }
+
+  // newest first
+  warnings.sort((a, b) => (a.weekKey < b.weekKey ? 1 : -1));
+  return warnings;
+}, [weeklyTotals, weeklyLimitTotal]);
+
+
+const currentWeekJobHours = useMemo(() => {
+  let total = 0;
+  for (const e of events) {
+    const calId = e.extendedProps?.calendarId;
+    if (!calId || !jobCalIds.has(calId)) continue;
+
+    const start = e.start ? new Date(e.start) : null;
+    if (!start) continue;
+
+    const weekKey = ymd(startOfPayWeek(start, 4));
+    if (weekKey !== selectedWeekKey) continue;
+
+    total += getHoursFromEvent(e);
+  }
+  return Math.round(total * 100) / 100;
+}, [events, jobCalIds, selectedWeekKey]);
+
 
   return (
     <div className="min-h-screen p-6">
@@ -64,9 +179,99 @@ export default function App() {
             Add calendars (jobs) in the sidebar. Toggle them on/off.
           </p>
         </header>
+<div className="mt-3 rounded-2xl bg-white/60 p-3 shadow-sm">
+  <div className="text-xs font-semibold uppercase tracking-wide opacity-70">
+    Weekly limit (Thu–Wed)
+  </div>
+<div className="rounded-2xl bg-white/60 p-3 shadow-sm">
+  <div className="text-xs font-semibold uppercase tracking-wide opacity-70">
+    Pay week (Thu–Wed)
+  </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[280px_1fr]">
-          <aside className="rounded-2xl bg-[var(--card)] p-4 shadow-sm">
+  <div className="mt-2 flex items-center justify-between gap-2">
+    <button
+      className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+      onClick={() => {
+        const d = new Date(selectedWeekStart);
+        d.setDate(d.getDate() - 7);
+        setSelectedWeekKey(ymd(d));
+      }}
+    >
+      ←
+    </button>
+
+    <div className="text-sm font-medium">
+      {fmtRange(selectedWeekStart)}
+    </div>
+
+    <button
+      className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+      onClick={() => {
+        const d = new Date(selectedWeekStart);
+        d.setDate(d.getDate() + 7);
+        setSelectedWeekKey(ymd(d));
+      }}
+    >
+      →
+    </button>
+  </div>
+
+  <button
+    className="mt-2 w-full rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
+    onClick={() => setSelectedWeekKey(ymd(startOfPayWeek(new Date(), 4)))}
+  >
+    Jump to this week
+  </button>
+</div>
+
+  <div className="mt-2 flex items-center gap-2">
+    <input
+      type="number"
+      min="0"
+      value={weeklyLimitTotal ?? ""}
+      onChange={(e) =>
+        setWeeklyLimitTotal(e.target.value === "" ? null : Number(e.target.value))
+      }
+      className="w-24 rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm outline-none"
+      placeholder="20"
+    />
+    <span className="text-sm opacity-70">hours</span>
+  </div>
+
+  <div className="mt-2 text-sm">
+    This week: <span className="font-medium">{currentWeekJobHours.toFixed(2)}</span>
+    {weeklyLimitTotal != null && (
+      <>
+        {" "}
+        / <span className="font-medium">{weeklyLimitTotal}</span>h
+      </>
+    )}
+  </div>
+</div>
+
+{weeklyWarnings.length > 0 && (
+  <div className="mt-4 rounded-2xl bg-white/70 p-3 shadow-sm">
+    <div className="text-xs font-semibold uppercase tracking-wide opacity-70">
+      Warnings
+    </div>
+
+    <div className="mt-2 space-y-2">
+      {weeklyWarnings.map((w) => (
+        <div key={w.weekKey} className="rounded-xl bg-rose-50 px-3 py-2 text-xs">
+          <div className="font-medium">
+            Hours exceeded for the week of {w.rangeLabel}
+          </div>
+          <div className="opacity-80">
+            {w.hours.toFixed(2)}h / {w.limit}h total
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
+          <aside className="rounded-2xl bg-[var(--card)] p-3 shadow-sm min-h-[80vh]">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide opacity-70">
                 Calendars
@@ -94,11 +299,21 @@ export default function App() {
               {calendars.map((cal) => (
                 <div
                   key={cal.id}
-                  className="flex items-center justify-between rounded-xl bg-white/60 px-3 py-2 shadow-sm"
+                  onClick={() => setActiveCalendarId(cal.id)}
+                  className={`flex items-center justify-between rounded-xl px-3 py-2 shadow-sm cursor-pointer
+                  ${activeCalendarId === cal.id ? "bg-white" : "bg-white/60"}`}               
                 >
                   <label className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ background: cal.color }} />
-                    <span className="text-sm">{cal.name}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm">{cal.name}</span>
+                      
+                      <span className="text-xs opacity-60">
+                    {((hoursByCalendarThisWeek[cal.id] || 0)).toFixed(2)} h
+                 </span>
+              
+                    </div>
+
                     <input
                       type="checkbox"
                       checked={cal.enabled}
@@ -122,7 +337,11 @@ export default function App() {
           </aside>
 
           <main className="rounded-2xl bg-[var(--card)] p-3 shadow-sm">
-            <CalendarView calendars={calendars} events={visibleEvents} onEventsChange={setEvents} />
+            <CalendarView 
+            calendars={calendars} 
+            events={visibleEvents} 
+            activeCalendarId={activeCalendarId}
+            onEventsChange={setEvents} />
           </main>
         </div>
       </div>
