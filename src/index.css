@@ -83,3 +83,105 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* Softer font rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* A gentle background gradient */
+:root {
+  --bg1: #f6f4ff;
+  --bg2: #fff7fb;
+  --card: rgba(255, 255, 255, 0.72);
+  --card-strong: rgba(255, 255, 255, 0.9);
+  --stroke: rgba(15, 23, 42, 0.10);
+  --text: #1f2430;
+}
+
+body {
+  background: radial-gradient(1200px 600px at 20% 10%, var(--bg2), transparent),
+              radial-gradient(1200px 600px at 80% 20%, var(--bg1), transparent),
+              linear-gradient(180deg, var(--bg1), var(--bg2));
+  color: var(--text);
+}
+
+/* Reusable "glass card" feel */
+.glass {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+}
+.glass-strong {
+  background: var(--card-strong);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+}
+
+/*FullCalendar*/
+
+.fc {
+  font-size: 14px;
+}
+
+.fc .fc-toolbar {
+  padding: 10px 12px;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.fc .fc-button {
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(15, 23, 42, 0.85) !important;
+  border-radius: 999px !important;
+  padding: 0.45rem 0.8rem !important;
+  box-shadow: none !important;
+}
+
+.fc .fc-scrollgrid,
+.fc .fc-scrollgrid-section > * {
+  border-color: rgba(15, 23, 42, 0.06) !important; /* lighter grid lines */
+}
+
+.fc .fc-timegrid-slot {
+  height: 44px; /* MORE vertical breathing room */
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-weight: 500;
+  color: rgba(15, 23, 42, 0.65);
+}
+
+/* Events: less chunky, more calendar-like */
+.fc .fc-event {
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 2px 6px !important;
+  box-shadow: none !important;
+  opacity: 0.95;
+}
+
+.fc .fc-event-time,
+.fc .fc-event-title {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+h1 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  font-weight: 500;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+

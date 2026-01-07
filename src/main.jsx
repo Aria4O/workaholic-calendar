@@ -8,6 +8,8 @@ const root = createRoot(container);
 
 root.render(
   <React.StrictMode>
+    <div className="font-sans">
     <App />
+    </div>
   </React.StrictMode>
 );

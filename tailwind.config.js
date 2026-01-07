@@ -2,7 +2,11 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ["Manrope", "system-ui", "-apple-system", "BlinkMacSystemFont"],
+      },
+    },
   },
   plugins: [],
 };
