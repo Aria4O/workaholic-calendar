@@ -91,9 +91,9 @@ body {
 
 /* A gentle background gradient */
 :root {
-  --bg1: #f6f4ff;
-  --bg2: #fff7fb;
-  --card: rgba(255, 255, 255, 0.72);
+  --bg1: #f5dde0;
+  --bg2: #f5dde0;
+  --card: rgba(228, 138, 187, 0.918);
   --card-strong: rgba(255, 255, 255, 0.9);
   --stroke: rgba(15, 23, 42, 0.10);
   --text: #1f2430;
@@ -131,7 +131,6 @@ body {
 .fc .fc-toolbar-title {
   font-size: 18px;
   font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
 .fc .fc-button {

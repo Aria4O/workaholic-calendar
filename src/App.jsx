@@ -170,186 +170,204 @@ const selectedWeekJobHours = useMemo(() => {
 }, [events, jobCalIds, selectedWeekKey]);
 
 
-  return (
-    <div className="min-h-screen px-10 py-8">
-      <div className="mx-auto w-full max-w-[1400px]">
-        <header className="mb-6">
+    return (
+    <div className="max-w-6xl mx-auto">
+      {/* Center the app */}
+      <div className="px-10 mx-auto">
+         <header className="mb-8 text-center">
           <h1 className="text-5xl font-semibold tracking-tight">Workaholic</h1>
-          <p className="mt-2 text-sm opacity-90">Scheduling multiple jobs made easy.</p>
+          <p className="mt-2 text-sm text-black/60">Scheduling multiple jobs made easy.</p>
         </header>
-    
-    <div className="grid gap-10 items-start md:grid-cols-[360px_1fr]">
-      <aside className="rounded-3xl bg-white/60 backdrop-blur-xl ring-1 ring-black/5 shadow-sm">
 
-        {/* Weekly limit card*/}
-        <div className="p-5 space-y-8">
-            <div className="text-xs font-semibold tracking-wide opacity-80">
-              Maximum Hours to work in a pay week (Thursday to Wednesday) 
-            </div>
-     
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="number"
-                min="0"
-                value={weeklyLimitTotal ?? ""}
-                onChange={(e) =>
-                  setWeeklyLimitTotal(e.target.value === "" ? null : Number(e.target.value))
-                }
-                className="w-24 rounded-xl border border-black/10 bg-white/80 px-3 py-2 text-sm outline-none"
-                placeholder="20"
-              />
-            <span className="text-sm opacity-70">hours</span>
-          </div>
-      </div>
+        <div className="grid w-full grid-cols-[380px_minmax(0,1fr)] gap-12 items-start">
+          {/* Sidebar */}
+          <aside className="min-w-0">
+            <div className="p-6 space-y-10">
+              {/* Weekly limit */}
+              <section className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-black/45">
+                  Weekly limit (Thu–Wed)
+                </div>
 
-      {/* Week picker card*/}
-      <div className="glass-strong rounded-2xl p-3 shadow-sm space-y-2">
-        <div className="text-xs font-semibold tracking-wide opacity-70">
-          Pay week (Thursday to Wednesday)
-        </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min="0"
+                    value={weeklyLimitTotal ?? ""}
+                    onChange={(e) =>
+                      setWeeklyLimitTotal(e.target.value === "" ? null : Number(e.target.value))
+                    }
+                    className="w-28 rounded-full bg-white/80 px-4 py-2 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                    placeholder="20"
+                  />
+                  <span className="text-sm text-black/55">hours</span>
+                </div>
 
-        <div className="flex items-center justify-between gap-2">
-            <button
-            className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-            onClick={() => {
-              const d = new Date(selectedWeekStart);
-              d.setDate(d.getDate() - 7);
-              setSelectedWeekKey(ymd(d));
-            }}
-            >
-          ←
-            </button>
-
-            <div className="text-sm font-medium">{fmtRange(selectedWeekStart)}</div>
-
-            <button
-              className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-              onClick={() => {
-                const d = new Date(selectedWeekStart);
-                d.setDate(d.getDate() + 7);
-                setSelectedWeekKey(ymd(d));
-              }}
-            >
-               →
-            </button>
-           </div>
-
-          <button
-          className="w-full rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-          onClick={() => setSelectedWeekKey(ymd(startOfPayWeek(new Date(), 4)))}
-          >
-          Jump to this week
-          </button>
-      </div>
-
-  <div className="text-sm">
-    Selected week: {" "}
-    <span className="tabular font-medium">{selectedWeekJobHours.toFixed(2)}</span>
-    {weeklyLimitTotal != null && (
-      <>
-        {" "}
-        / <span className="font-medium">{weeklyLimitTotal}</span>h
-      </>
-    )}
-  </div>
-
-
-{weeklyWarnings.length > 0 && (
-  <div className="glass-strong rounded-2xl bg-white/70 p-3 shadow-sm space-y-2">
-    <div className="text-xs font-bold uppercase tracking-wide text-rose-600">
-      Warnings: 
-    </div>
-
-    <div className="space-y-2">
-      {weeklyWarnings.map((w) => (
-        <div key={w.weekKey} className="rounded-xl bg-rose-50 px-3 py-2 text-xs">
-          <div className="font-medium">
-            Hours exceeded for the week of {w.rangeLabel}
-          </div>
-          <div className="opacity-80">
-            {w.hours.toFixed(2)}h / {w.limit}h total
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-{/*Calendars card*/}
-   <div className="glass-strong rounded-2xl p-3 shadow-sm space-y-3">
-    <div className="flex items-center justify-between">
-     <h2 className="text-sm font-semibold tracking-wide opacity-70">
-      Calendars
-     </h2>
-   </div>
-
-    {/* Add calendar */}
-     <div className="flex gap-2">
-      <input
-      value={newName}
-      onChange={(e) => setNewName(e.target.value)}
-      placeholder="Add a job (ex: SEAS Office)"
-      className="w-full rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm outline-none"
-      />
-       <button
-         onClick={addCalendar}
-         className="rounded-xl bg-white px-3 py-2 text-sm shadow-sm"
-        >
-         +
-        </button>
-      </div>
-
-      {/* List */}
-      <div className="space-y-2">
-        {calendars.map((cal) => (
-          <div
-            key={cal.id}
-            onClick={() => setActiveCalendarId(cal.id)}
-            className={`flex items-center justify-between rounded-xl px-3 py-2 shadow-sm cursor-pointer
-              ${activeCalendarId === cal.id ? "bg-white" : "bg-white/60"}`}               
-            >
-            <label className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full" style={{ background: cal.color }} />
-              <div className="flex flex-col">
-                <span className="text-sm">{cal.name}</span> 
-                <span className="tabular text-xs opacity-60">
-                  {((hoursByCalendarThisWeek[cal.id] || 0)).toFixed(2)} h
-                </span>
-            </div>
-
-            <input
-              type="checkbox"
-              checked={cal.enabled}
-              onChange={() => toggleCalendar(cal.id)}
-              className="ml-2 h-4 w-4"
-            />
-          </label>
-
-          {cal.name !== "Personal" && (
-              <button
-                 onClick={(e) => {
-                    e.stopPropagation();
-                    deleteCalendar(cal.id);
-                 }}
-                  className="text-xs opacity-60 hover:opacity-100"
-                  title="Delete calendar"
-                 >
-                   ✕
-                 </button>
+                <div className="text-sm text-black/70">
+                  Selected week:{" "}
+                  <span className="tabular font-semibold text-black/85">{selectedWeekJobHours.toFixed(2)}</span>
+                  {weeklyLimitTotal != null && (
+                    <>
+                      {" "}
+                      / <span className="tabular font-semibold text-black/85">{weeklyLimitTotal}</span>h
+                    </>
                   )}
                 </div>
-              ))}
-            </div>
+              </section>
+
+              <div className="h-px bg-black/5 my-6" />
+
+              {/* Week picker */}
+              <section className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-black/45">
+                  Pay week (Thu–Wed)
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    className="h-9 w-9 rounded-full bg-white/80 ring-1 ring-black/10 hover:bg-white"
+                    onClick={() => {
+                      const d = new Date(selectedWeekStart);
+                      d.setDate(d.getDate() - 7);
+                      setSelectedWeekKey(ymd(d));
+                    }}
+                    aria-label="Previous week"
+                  >
+                    ←
+                  </button>
+
+                  <div className="text-sm font-medium text-black/80">{fmtRange(selectedWeekStart)}</div>
+
+                  <button
+                    className="h-9 w-9 rounded-full bg-white/80 ring-1 ring-black/10 hover:bg-white"
+                    onClick={() => {
+                      const d = new Date(selectedWeekStart);
+                      d.setDate(d.getDate() + 7);
+                      setSelectedWeekKey(ymd(d));
+                    }}
+                    aria-label="Next week"
+                  >
+                    →
+                  </button>
+                </div>
+
+                <button
+                  className="w-full rounded-full bg-white/80 px-4 py-2 text-sm ring-1 ring-black/10 hover:bg-white"
+                  onClick={() => setSelectedWeekKey(ymd(startOfPayWeek(new Date(), 4)))}
+                >
+                  Jump to this week
+                </button>
+              </section>
+
+              {/* Warnings */}
+              {weeklyWarnings.length > 0 && (
+                <>
+                  <div className="h-px bg-black/10" />
+                  <section className="space-y-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-rose-600">
+                      Warnings
+                    </div>
+
+                    <div className="space-y-2">
+                      {weeklyWarnings.slice(0, 3).map((w) => (
+                        <div key={w.weekKey} className="rounded-2xl bg-rose-50 px-4 py-3 text-xs ring-1 ring-rose-100">
+                          <div className="font-medium text-rose-900">
+                            Hours exceeded — {w.rangeLabel}
+                          </div>
+                          <div className="mt-1 text-rose-900/70">
+                            <span className="tabular">{w.hours.toFixed(2)}h</span> /{" "}
+                            <span className="tabular">{w.limit}h</span> total
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              <div className="h-px bg-black/10" />
+
+              {/* Calendars */}
+              <section className="space-y-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-black/45">Calendars</div>
+
+                <div className="flex gap-2">
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Add a job (e.g., SEAS Office)"
+                    className="w-full rounded-full bg-white/80 px-4 py-2 text-sm ring-1 ring-black/10 outline-none focus:ring-black/20"
+                  />
+                  <button
+                    onClick={addCalendar}
+                    className="rounded-full bg-white/80 px-4 py-2 text-sm ring-1 ring-black/10 hover:bg-white"
+                    aria-label="Add calendar"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {calendars.map((cal) => {
+                    const isActive = activeCalendarId === cal.id;
+                    const hours = hoursByCalendarThisWeek[cal.id] || 0;
+
+                    return (
+                      <div
+                        key={cal.id}
+                        onClick={() => setActiveCalendarId(cal.id)}
+                        className={`flex items-center justify-between rounded-2xl px-4 py-3 ring-1 cursor-pointer
+                          ${isActive ? "bg-white ring-black/10" : "bg-white/50 ring-black/5 hover:bg-white/70"}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="h-3 w-3 rounded-full" style={{ background: cal.color }} />
+                          <div className="flex flex-col leading-tight">
+                            <span className="text-sm font-medium text-black/80">{cal.name}</span>
+                            <span className="tabular text-xs text-black/45">{hours.toFixed(2)} h</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={cal.enabled}
+                            onChange={() => toggleCalendar(cal.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4"
+                            aria-label={`Toggle ${cal.name}`}
+                          />
+
+                          {cal.name !== "Personal" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteCalendar(cal.id);
+                              }}
+                              className="h-8 w-8 rounded-full bg-white/70 ring-1 ring-black/10 hover:bg-white flex items-center justify-center text-black/50"
+                              aria-label={`Delete ${cal.name}`}
+                              title="Delete calendar"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             </div>
           </aside>
-          
-           <main className="rounded-3xl bg-white/70 backdrop-blur-xl ring-1 ring-black/5 shadow-sm overflow-hidden">
-           <div className="p-3"> 
-            <CalendarView 
-            calendars={calendars} 
-            events={visibleEvents} 
-            activeCalendarId={activeCalendarId}
-            onEventsChange={setEvents} />
+
+          {/* Calendar */}
+          <main className="min-w-0">
+             <div className="rounded-3xl bg-white/80 backdrop-blur-xl ring-1 ring-black/10 p-6">
+              <CalendarView
+                calendars={calendars}
+                events={visibleEvents}
+                activeCalendarId={activeCalendarId}
+                onEventsChange={setEvents}
+              />
             </div>
           </main>
         </div>

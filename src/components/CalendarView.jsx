@@ -99,8 +99,13 @@ export default function CalendarView({ calendars, events, activeCalendarId, onEv
 
       events,
     }),
-    [events, onEventsChange, calendarMap]
+    [events, onEventsChange, calendarMap, calendars, activeCalendarId]
   );
 
-  return <FullCalendar {...options} />;
+  return (
+  <div className="w-full min-w-0">
+    <div className="w-full min-w-0 [&_.fc]:w-full">
+      <FullCalendar {...options} />
+    </div>
+  </div>);
 }
